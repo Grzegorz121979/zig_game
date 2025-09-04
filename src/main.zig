@@ -5,7 +5,7 @@ const User = struct {
     age: u8,
 };
 
-pub fn main() !void {
+fn getUserData() !User {
     var stdin_name: [16]u8 = undefined;
     var stdin_name_reader = std.fs.File.stdin().reader(&stdin_name);
     const stdin_name_interface = &stdin_name_reader.interface;
@@ -27,10 +27,13 @@ pub fn main() !void {
     const trimmed_age = std.mem.trim(u8, age, " \n\r\t");
     const parse_age = try std.fmt.parseInt(u8, trimmed_age, 10);
 
-    const user = User {
+    return User {
         .name = trimmed_name,
         .age = parse_age,
     };
+}
 
+pub fn main() !void {
+    const user = try getUserData();
     std.debug.print("Name: {s}, age: {d}\n", .{user.name, user.age});
 }
