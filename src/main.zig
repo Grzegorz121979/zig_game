@@ -6,24 +6,31 @@ const User = struct {
 };
 
 pub fn main() !void {
+    var stdin_name: [16]u8 = undefined;
+    var stdin_name_reader = std.fs.File.stdin().reader(&stdin_name);
+    const stdin_name_interface = &stdin_name_reader.interface;
 
-    var stdin_buffer: [16]u8 = undefined;
+    var stdin_age: [16]u8 = undefined;
+    var stdin_age_reader = std.fs.File.stdin().reader(&stdin_age);
+    var stdin_age_interface = &stdin_age_reader.interface;
+
     var stdout_buffer: [16]u8 = undefined;
-    var stdin_reader = std.fs.File.stdin().reader(&stdin_buffer);
     var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
-    const stdin = &stdin_reader.interface;
     const stdout = &stdout_writer.interface;
 
     try stdout.writeAll("What's your name: ");
-    const name = try stdin.takeDelimiterExclusive('\n');
+    const name = try stdin_name_interface.takeDelimiterExclusive('\n');
     const trimmed_name = std.mem.trim(u8, name, " \n\r\t");
-    try stdout.print("Hello, {s}!", .{trimmed_name});
-    try stdout.flush();
 
-    // const user = User {
-    //     .name = "Greg",
-    //     .age = 46,
-    // };
+    try stdout.writeAll("How old are you: ");
+    const age = try stdin_age_interface.takeDelimiterExclusive('\n');
+    const trimmed_age = std.mem.trim(u8, age, " \n\r\t");
+    const parse_age = try std.fmt.parseInt(u8, trimmed_age, 10);
 
-    // std.debug.print("Name: {s}, age: {d}\n", .{user.name, user.age});
+    const user = User {
+        .name = trimmed_name,
+        .age = parse_age,
+    };
+
+    std.debug.print("Name: {s}, age: {d}\n", .{user.name, user.age});
 }
