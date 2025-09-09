@@ -37,15 +37,6 @@ fn writeToJsonFile(path_file: []const u8, alloc: std.mem.Allocator, user: User) 
 }
 
 pub fn main() !void {
-    const path = "user.json";
-    
-    var gpa = std.heap.GeneralPurposeAllocator(.{}).init;
-    defer _ = gpa.deinit();
-    const alloc = gpa.allocator();
-
-    const user_data = try getUserData(alloc);
-
-    try writeToJsonFile(path, alloc, user_data);
-    defer alloc.free(user_data.name);
-    std.debug.print("Name: {s}, age: {d}\n", .{user_data.name, user_data.age});
+    const user = try getUserData();
+    std.debug.print("Name: {s}, age: {d}\n", .{user.name, user.age});
 }
