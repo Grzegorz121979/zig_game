@@ -5,35 +5,47 @@ const User = struct {
     age: u8,
 };
 
-fn getUserData() !User {
-    var stdin_name: [16]u8 = undefined;
-    var stdin_name_reader = std.fs.File.stdin().reader(&stdin_name);
-    const stdin_name_interface = &stdin_name_reader.interface;
+fn getUserData(alloc: std.mem.Allocator) !User {
+    var stdin_buffer: [32]u8 = undefined;
+    var age_buffer: [32]u8 = undefined;
+    var stdin_reader = std.fs.File.stdin().reader(&stdin_buffer);
+    const stdin = &stdin_reader.interface;
 
-    var stdin_age: [16]u8 = undefined;
-    var stdin_age_reader = std.fs.File.stdin().reader(&stdin_age);
-    var stdin_age_interface = &stdin_age_reader.interface;
+    std.debug.print("What's your name?:\n", .{});
+    const name = try stdin.takeDelimiterExclusive('\n');
+    const name_alloc = try alloc.dupe(u8, std.mem.trim(u8, name, " \r\n\t"));
 
-    var stdout_buffer: [16]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
-    const stdout = &stdout_writer.interface;
-
-    try stdout.writeAll("What's your name: ");
-    const name = try stdin_name_interface.takeDelimiterExclusive('\n');
-    const trimmed_name = std.mem.trim(u8, name, " \n\r\t");
-
-    try stdout.writeAll("How old are you: ");
-    const age = try stdin_age_interface.takeDelimiterExclusive('\n');
+    std.debug.print("How old are you?:\n", .{});
+    var age_reader = std.fs.File.stdin().reader(&age_buffer);
+    var stdin2 = &age_reader.interface;
+    const age = try stdin2.takeDelimiterExclusive('\n');
     const trimmed_age = std.mem.trim(u8, age, " \n\r\t");
     const parse_age = try std.fmt.parseInt(u8, trimmed_age, 10);
 
     return User {
-        .name = trimmed_name,
+        .name = name_alloc,
         .age = parse_age,
     };
 }
 
+fn writeToJsonFile(path_file: []const u8, alloc: std.mem.Allocator, user: User) !void {
+    const file = try std.fs.cwd().createFile(path_file, .{});
+    defer file.close();
+    const content = try std.json.Stringify.valueAlloc(alloc, user, .{.whitespace = .indent_4});
+    defer alloc.free(content);
+    try file.writeAll(content);
+}
+
 pub fn main() !void {
-    const user = try getUserData();
-    std.debug.print("Name: {s}, age: {d}\n", .{user.name, user.age});
+    const path = "user.json";
+    
+    var gpa = std.heap.GeneralPurposeAllocator(.{}).init;
+    defer _ = gpa.deinit();
+    const alloc = gpa.allocator();
+
+    const user_data = try getUserData(alloc);
+
+    try writeToJsonFile(path, alloc, user_data);
+    defer alloc.free(user_data.name);
+    std.debug.print("Name: {s}, age: {d}\n", .{user_data.name, user_data.age});
 }
