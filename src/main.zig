@@ -10,6 +10,11 @@ fn getUserData(alloc: std.mem.Allocator) !User {
     var age_buffer: [32]u8 = undefined;
     var stdin_reader = std.fs.File.stdin().reader(&stdin_buffer);
     const stdin = &stdin_reader.interface;
+fn getUserData(alloc: std.mem.Allocator) !User {
+    var stdin_buffer: [32]u8 = undefined;
+    var age_buffer: [32]u8 = undefined;
+    var stdin_reader = std.fs.File.stdin().reader(&stdin_buffer);
+    const stdin = &stdin_reader.interface;
 
     std.debug.print("What's your name?:\n", .{});
     const name = try stdin.takeDelimiterExclusive('\n');
@@ -23,6 +28,7 @@ fn getUserData(alloc: std.mem.Allocator) !User {
     const parse_age = try std.fmt.parseInt(u8, trimmed_age, 10);
 
     return User {
+        .name = name_alloc,
         .name = name_alloc,
         .age = parse_age,
     };
