@@ -29,23 +29,25 @@ fn getUserData(alloc: std.mem.Allocator) !User {
 }
 
 fn writeToJsonFile(path_file: []const u8, alloc: std.mem.Allocator, user: User) !void {
+    var list = std.array_list.Managed(User).init(alloc);
+    defer list.deinit();
+    try list.append(user);
     const file = try std.fs.cwd().createFile(path_file, .{});
     defer file.close();
-    const content = try std.json.Stringify.valueAlloc(alloc, user, .{.whitespace = .indent_4});
+    const content = try std.json.Stringify.valueAlloc(alloc, list.items, .{.whitespace = .indent_4});
     defer alloc.free(content);
     try file.writeAll(content);
 }
 
 pub fn main() !void {
-    const path = "user.json";
-    
+    const file_path = "user.json";
     var gpa = std.heap.GeneralPurposeAllocator(.{}).init;
     defer _ = gpa.deinit();
     const alloc = gpa.allocator();
 
     const user_data = try getUserData(alloc);
-
-    try writeToJsonFile(path, alloc, user_data);
+    
+    try writeToJsonFile(file_path, alloc, user_data);
     defer alloc.free(user_data.name);
     std.debug.print("Name: {s}, age: {d}\n", .{user_data.name, user_data.age});
 }

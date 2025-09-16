@@ -1,4 +1,6 @@
-{
-    "name": "Greg",
-    "age": 46
-}
+[
+    {
+        "name": "Greg",
+        "age": 55
+    }
+]
